@@ -1,0 +1,30 @@
+# Example: Prompt Effector
+# A structured code review prompt template with configurable focus areas
+
+[effector]
+name = "code-review-prompt"
+version = "1.0.0"
+type = "prompt"
+description = "Structured prompt template for thorough code reviews with security focus"
+license = "MIT"
+emoji = "📝"
+tags = ["code-review", "prompt", "template", "security"]
+authors = ["effectorHQ Contributors"]
+repository = "https://github.com/effectorHQ/code-review-prompt"
+min-spec-version = "0.1.0"
+
+[effector.categories]
+primary = "developer-tools"
+secondary = ["security", "content"]
+
+[[effector.dependencies]]
+name = "code-analysis"
+version = ">=1.0.0"
+type = "skill"
+optional = true
+
+[effector.prompt]
+format = "template"
+entry = "prompt.md"
+variables = ["language", "focus_areas", "severity_threshold", "max_issues"]
+context = "system"

@@ -1,0 +1,44 @@
+# Example: Workspace Effector
+# A DevOps engineer agent persona with pre-configured skills and behavior
+
+[effector]
+name = "devops-engineer"
+version = "2.0.0"
+type = "workspace"
+description = "Production-focused DevOps agent with Kubernetes, Docker, and CI/CD expertise"
+license = "MIT"
+emoji = "🔧"
+tags = ["devops", "kubernetes", "docker", "infrastructure"]
+authors = ["effectorHQ Contributors"]
+repository = "https://github.com/effectorHQ/workspace-templates"
+min-spec-version = "0.1.0"
+
+[effector.categories]
+primary = "infrastructure"
+secondary = ["developer-tools"]
+
+[[effector.dependencies]]
+name = "docker-compose"
+version = ">=2.0.0"
+type = "skill"
+
+[[effector.dependencies]]
+name = "kubernetes-deploy"
+version = ">=1.0.0"
+type = "skill"
+
+[[effector.dependencies]]
+name = "terraform-plan"
+version = ">=1.0.0"
+type = "skill"
+
+[[effector.dependencies]]
+name = "deploy-and-notify"
+version = ">=1.0.0"
+type = "workflow"
+optional = true
+
+[runtime.openclaw]
+format = "workspace"
+entry = "."
+files = ["SOUL.md", "AGENTS.md", "TOOLS.md", "IDENTITY.md", "HEARTBEAT.md"]

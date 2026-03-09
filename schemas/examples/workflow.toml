@@ -1,0 +1,47 @@
+# Example: Workflow Effector
+# A deploy-and-notify pipeline that chains skill Effectors via Lobster
+
+[effector]
+name = "deploy-and-notify"
+version = "1.0.0"
+type = "workflow"
+description = "Build, deploy to Kubernetes, verify health, notify team on Slack"
+license = "MIT"
+emoji = "🚀"
+tags = ["deployment", "kubernetes", "ci-cd", "slack"]
+authors = ["effectorHQ Contributors"]
+repository = "https://github.com/effectorHQ/deploy-and-notify"
+min-spec-version = "0.1.0"
+
+[effector.categories]
+primary = "infrastructure"
+secondary = ["ci-cd"]
+
+[[effector.dependencies]]
+name = "docker-build"
+version = ">=1.0.0"
+type = "skill"
+
+[[effector.dependencies]]
+name = "kubernetes-apply"
+version = ">=1.0.0"
+type = "skill"
+
+[[effector.dependencies]]
+name = "slack-notify"
+version = ">=2.0.0"
+type = "skill"
+
+[effector.permissions]
+network = true
+subprocess = true
+env-read = ["KUBECONFIG", "DOCKER_REGISTRY", "SLACK_WEBHOOK_URL"]
+
+[effector.errors]
+retry = { max-attempts = 3, backoff = "exponential" }
+on-failure = "fallback"
+fallback = "slack-notify"
+
+[runtime.openclaw]
+format = "lobster"
+entry = "pipeline.yml"

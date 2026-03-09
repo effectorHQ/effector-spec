@@ -1,0 +1,36 @@
+# Example: Bridge Effector
+# The openclaw-mcp bridge that exposes SKILL.md files as MCP tools
+
+[effector]
+name = "openclaw-mcp-bridge"
+version = "1.0.0"
+type = "bridge"
+description = "Expose OpenClaw skills as MCP tools for Claude, Cursor, and other MCP clients"
+license = "MIT"
+emoji = "🌉"
+tags = ["mcp", "bridge", "interoperability", "claude"]
+authors = ["effectorHQ Contributors"]
+repository = "https://github.com/effectorHQ/openclaw-mcp"
+min-spec-version = "0.1.0"
+
+[effector.categories]
+primary = "developer-tools"
+secondary = ["infrastructure"]
+
+[effector.bridge]
+source-runtime = "openclaw"
+source-format = "skill.md"
+target-runtime = "mcp"
+target-format = "mcp-tool"
+transport = "stdio"
+
+[effector.permissions]
+network = false
+subprocess = false
+filesystem = ["read"]
+filesystem-paths = ["~/.openclaw/workspace/skills/"]
+
+[runtime.mcp]
+format = "mcp-server"
+entry = "bin/skill-mcp.js"
+transport = "stdio"

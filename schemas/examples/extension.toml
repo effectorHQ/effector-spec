@@ -1,0 +1,32 @@
+# Example: Extension Effector
+# A Telegram messaging channel that hooks into OpenClaw's Plugin SDK
+
+[effector]
+name = "telegram-channel"
+version = "3.0.1"
+type = "extension"
+description = "Telegram messaging channel for OpenClaw with rich media support"
+license = "MIT"
+emoji = "📱"
+tags = ["telegram", "messaging", "channel"]
+authors = ["effectorHQ Contributors"]
+repository = "https://github.com/effectorHQ/telegram-channel"
+min-spec-version = "0.1.0"
+
+[effector.categories]
+primary = "communication"
+
+[effector.permissions]
+network = true
+env-read = ["TELEGRAM_BOT_TOKEN"]
+secrets = ["telegram-bot-token"]
+
+[runtime.openclaw]
+format = "plugin"
+entry = "dist/index.js"
+min-version = "0.21.0"
+
+[runtime.openclaw.plugin]
+channels = ["telegram"]
+permissions = ["network", "storage"]
+config-schema = "config.schema.json"

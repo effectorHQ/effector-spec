@@ -1,0 +1,54 @@
+# Example: Skill Effector
+# A GitHub PR review skill that wraps the `gh` CLI
+
+[effector]
+name = "github-pr-review"
+version = "1.2.0"
+type = "skill"
+description = "Automated pull request review with code analysis and inline suggestions"
+license = "MIT"
+emoji = "🔍"
+tags = ["github", "code-review", "ci", "quality"]
+authors = ["effectorHQ Contributors"]
+repository = "https://github.com/effectorHQ/github-pr-review"
+min-spec-version = "0.1.0"
+
+[effector.categories]
+primary = "developer-tools"
+secondary = ["ci-cd", "code-quality"]
+
+[[effector.dependencies]]
+name = "git-operations"
+version = ">=1.0.0"
+type = "skill"
+
+[effector.permissions]
+network = true
+subprocess = true
+env-read = ["GITHUB_TOKEN"]
+
+[runtime.openclaw]
+format = "skill.md"
+entry = "SKILL.md"
+min-version = "0.20.0"
+
+[runtime.openclaw.requires]
+bins = ["gh", "jq"]
+env = ["GITHUB_TOKEN"]
+
+[runtime.openclaw.install]
+brew = { formula = "gh", bins = ["gh"] }
+apt = { package = "gh", bins = ["gh"] }
+
+[runtime.openclaw.publish]
+registry = "clawhub"
+tier = "managed"
+
+[runtime.mcp]
+format = "mcp-tool"
+entry = "mcp/adapter.js"
+transport = "stdio"
+
+[runtime.mcp.tool]
+name = "github_pr_review"
+input-schema = "mcp/input-schema.json"
