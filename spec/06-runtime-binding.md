@@ -1,7 +1,7 @@
-# 05 — Runtime Binding
+# 06 — Runtime Binding
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
 
@@ -10,6 +10,33 @@
 A runtime binding is the configuration that tells a specific agent runtime how to consume an Effector. The Effector manifest carries one or more `[runtime.<name>]` tables, each tailored to a specific runtime's expectations.
 
 This design means a single Effector can work across multiple runtimes without the author maintaining separate packages.
+
+## Type Checking at Runtime Load
+
+Before executing any step, a conformant runtime MUST perform **interface type validation**:
+
+```
+1. Read [effector.interface] for each step in the pipeline
+2. For each sequential pair (A, B):
+   - Assert: output(A) <: input(B)      [structural subtyping]
+   - If check fails: ERROR, halt pipeline, report type mismatch
+3. For context requirements:
+   - Assert: all declared context types are satisfied by runtime environment
+   - If unsatisfied: WARN + block (or skip if optional)
+4. Log type-check result to runtime audit log
+```
+
+This is analogous to a linker's type resolution pass — it happens once, before execution starts, not per-invocation.
+
+### Type-Check Result Codes
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| `TC_OK` | All types resolve and are compatible | Proceed |
+| `TC_WARN_INFERRED` | One or more types are inferred (not declared) | Proceed with warning |
+| `TC_ERR_MISMATCH` | A sequential type pair is incompatible | Halt, report step indices |
+| `TC_ERR_UNKNOWN` | A type reference is not found in effector-types | Halt if strict mode, warn if lenient |
+| `TC_ERR_CONTEXT` | Required context type is not available | Halt if required, skip if optional |
 
 ## Binding Architecture
 

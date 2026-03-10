@@ -1,135 +1,112 @@
 # 00 — Overview
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
 
 ## What is an Effector?
 
-An **Effector** is any unit of capability that enables an AI agent to act on the world.
+An **Effector** is any unit of capability that enables an AI agent to act on the world — with a **typed interface** that makes composition safe, discovery intelligent, and verification possible.
 
 The name comes from robotics: an *end effector* is the device at the end of a robotic arm — the gripper, the welder, the sensor — that lets the robot interact with its environment. Without end effectors, a robot arm is just a moving structure with no purpose.
 
-AI agents have the same problem. A language model can reason, plan, and generate. But without capabilities that connect it to external systems — code execution, API calls, data retrieval, user interaction — it's a philosopher, not an actor.
+AI agents have the same problem. A language model can reason, plan, and generate. But without capabilities that connect it to external systems — code execution, API calls, data retrieval, user interaction — it's a philosopher, not an actor. An Effector is that connection.
 
-An Effector is that connection. It packages a discrete capability — with its metadata, documentation, dependencies, security constraints, and runtime bindings — into a distributable, composable, discoverable unit.
+What makes it different from existing formats (SKILL.md, MCP tools, LangChain decorators) is the **type layer**: every Effector declares what kind of data it accepts, what it produces, and what environment it requires. This makes the difference between "a skill you pray will work" and "a capability you can verify will compose."
 
-## Scope
+## The Problem This Solves
 
-This specification defines:
+AI agent capabilities in 2026 are where JavaScript modules were in 2012 — fragmented, untyped, and impossible to compose safely.
 
-1. **The Effector Manifest** (`effector.toml`) — a machine-readable description of an Effector's identity, type, requirements, and runtime bindings
-2. **The Effector Type System** — a taxonomy of capability types (skill, extension, workflow, workspace, bridge, prompt) with distinct semantics
-3. **The Effector Lifecycle** — stages from creation through validation, packaging, publication, discovery, installation, and execution
-4. **The Composition Model** — how Effectors declare dependencies, compose with each other, and negotiate capabilities
-5. **Runtime Binding** — how agent runtimes consume Effectors, with OpenClaw as the reference implementation
-6. **Security Model** — permission declarations, trust levels, and sandboxing constraints
+Real numbers from the ecosystem:
 
-This specification does **not** define:
+- **67% of multi-agent failures** come from inter-agent composition errors ([arXiv:2501.06322](https://arxiv.org/abs/2501.06322))
+- **3–15% tool calling failure rate** in production due to type mismatches
+- **36% of ClawHub skills** contained malicious payloads before the Feb 2026 cleanup — enabled by zero signing and zero permission verification
+- **13,729+ community skills** across 11 categories, but no way to search by interface type or verify composition compatibility
 
-- The internal behavior of any specific Effector (that's the author's domain)
-- The wire protocol for runtime communication (that's MCP, ACP, or runtime-specific)
-- The registry API for publishing and discovery (that's a separate spec)
-- Pricing, licensing enforcement, or commercial distribution mechanics
+The root cause: no type system. You chain two skills and hope the output format matches. You combine three MCP tools and discover conflicts at runtime. TypeScript solved this for JavaScript — not by replacing it, but by adding a type layer. The Effector Spec does the same for AI agent capabilities.
 
-## Design Principles
+## What This Specification Defines
 
-### 1. Backward Compatibility
+**Tier 1 — The Type System** (what makes Effectors composable)
 
-The most important design constraint. There are 3,286+ skills on ClawHub today. Every one of them must be a valid Effector without modification.
+1. **Type Language** (01) — Formal type language for capability interfaces
+2. **Composition Algebra** (02) — Sequential, parallel, conditional, fallback composition rules
+3. **Discovery Protocol** (03) — Search by interface type, substitutability queries
 
-A SKILL.md file without an `effector.toml` is implicitly a skill-type Effector. The runtime infers the manifest from the SKILL.md frontmatter. This means adoption cost is zero for existing skill authors.
+**Tier 2 — The Package Format** (what makes Effectors distributable)
 
-### 2. Progressive Disclosure
+4. **Manifest Format** (04) — `effector.toml` with type annotations and runtime bindings
+5. **Type Taxonomy** (05) — Six canonical types: skill, extension, workflow, workspace, bridge, prompt
+6. **Runtime Binding** (06) — How runtimes consume Effectors (OpenClaw reference + MCP)
 
-A trivial Effector needs five lines:
+**Tier 3 — The Trust Model** (what makes Effectors safe)
 
-```toml
-[effector]
-name = "hello-world"
-version = "0.1.0"
-type = "skill"
-description = "A minimal example"
-```
-
-A complex Effector can express multi-runtime bindings, fine-grained permissions, composition dependencies, and custom metadata — but none of that is required to get started.
-
-### 3. Format Agnosticism
-
-The manifest describes *what* the Effector provides. The runtime decides *how* to consume it. A skill Effector might be consumed as a SKILL.md file by OpenClaw, as an MCP tool by Claude Desktop, or as a function call schema by a custom runtime. The manifest carries bindings for each.
-
-### 4. Human Readability
-
-We chose TOML over JSON or YAML for the manifest because:
-
-- TOML has unambiguous semantics (unlike YAML's type coercion gotchas)
-- TOML is more readable than JSON for configuration
-- TOML maps cleanly to nested key-value structures
-- TOML has first-class support for inline tables and arrays of tables
-
-The manifest should be something a developer reads and understands in under 30 seconds.
-
-### 5. Composability First
-
-Effectors are designed to compose. A workflow Effector can depend on skill Effectors. A workspace Effector can bundle skill, extension, and prompt Effectors. The composition model is explicit, version-constrained, and runtime-validated.
+7. **Security Model** (07) — Permission types, trust levels, signing, sandbox
+8. **Lifecycle** (08) — Create → Type → Validate → Package → Publish → Discover → Compose → Execute
 
 ## Conceptual Model
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                     AI Agent                          │
-│                                                       │
-│  ┌─────────┐    ┌──────────┐    ┌──────────────────┐ │
-│  │  Brain   │───▶│   Body   │───▶│     Hands        │ │
-│  │ (LLM)   │    │(Runtime) │    │  (Effectors)     │ │
-│  └─────────┘    └──────────┘    │                  │ │
-│                                  │  ┌────────────┐ │ │
-│                                  │  │   Skill    │ │ │
-│                                  │  ├────────────┤ │ │
-│                                  │  │ Extension  │ │ │
-│                                  │  ├────────────┤ │ │
-│                                  │  │ Workflow   │ │ │
-│                                  │  ├────────────┤ │ │
-│                                  │  │ Workspace  │ │ │
-│                                  │  ├────────────┤ │ │
-│                                  │  │  Bridge    │ │ │
-│                                  │  ├────────────┤ │ │
-│                                  │  │  Prompt    │ │ │
-│                                  │  └────────────┘ │ │
-│                                  └──────────────────┘ │
-└──────────────────────────────────────────────────────┘
+Brain (LLM) ──► Body (Runtime) ──► Hands (Effectors)
+                                         │
+                                  Typed Interface
+                                  ──────────────
+                                  input:  CodeDiff
+                                  output: ReviewReport
+                                  context: [Repository]
+                                         │
+                                  skill  extension
+                                  workflow workspace
+                                  bridge  prompt
 ```
 
-The **Brain** (language model) reasons and plans. The **Body** (runtime — OpenClaw, Claude Agent SDK, LangChain, etc.) orchestrates execution. The **Hands** (Effectors) are the capabilities that connect the agent to external systems and actions.
+The **Brain** (LLM) reasons. The **Body** (OpenClaw, Claude Agent SDK, etc.) orchestrates. The **Hands** (Effectors) act — with typed interfaces that verify composition before execution.
 
-This spec defines the Hands layer.
+## The Capability Graph
+
+N typed Effectors enable O(N²) valid compositions. Discovery becomes semantic (find by type, not keyword). Composition is verified (type mismatches caught at definition time). Every new Effector multiplies possibilities for every existing one.
+
+This is what "better invoking more resources in the digital world" means — not more APIs, but every capability discoverable and composable through the type system.
+
+## Design Principles
+
+1. **Types over conventions** — Formal interfaces replace hope-and-pray composition
+2. **Structural, not nominal subtyping** — Compatibility by shape, not by name. `SecurityReport` is automatically compatible as `ReviewReport` input.
+3. **Additive, not replacing** — Existing SKILL.md, MCP tools, LangChain tools work as-is
+4. **Progressive disclosure** — 5 lines for simple, unlimited expressiveness for complex
+5. **Runtime-agnostic** — Works with OpenClaw, MCP, Claude Agent SDK, or any future runtime
+6. **Community-extensible** — Domain types defined by communities, not central authority
 
 ## Terminology
 
 | Term | Definition |
 |------|-----------|
-| **Effector** | A distributable, composable unit of AI agent capability |
-| **Manifest** | The `effector.toml` file describing an Effector's metadata and bindings |
-| **Entry** | The primary file the runtime loads (e.g., `SKILL.md`, `index.ts`, `pipeline.yml`) |
-| **Runtime** | The agent execution environment that consumes Effectors (e.g., OpenClaw, Claude Desktop) |
-| **Binding** | A runtime-specific configuration block in the manifest |
-| **Registry** | A service that indexes Effectors for discovery (e.g., ClawHub) |
-| **Composition** | The mechanism by which Effectors declare dependencies on other Effectors |
-| **Trust Level** | A security classification determining what an Effector is allowed to access |
+| **Effector** | A distributable, typed, composable unit of AI agent capability |
+| **Interface** | Typed declaration of inputs, outputs, and context requirements |
+| **Manifest** | The `effector.toml` file: metadata, types, runtime bindings |
+| **Entry** | Primary file the runtime loads (`SKILL.md`, `index.ts`, `pipeline.yml`) |
+| **Runtime** | Agent execution environment (OpenClaw, Claude Agent SDK, etc.) |
+| **Capability Graph** | Emergent network of type-compatible compositions across all Effectors |
+| **Structural Subtype** | Type A is subtype of B if A has all of B's fields with compatible types |
+| **Trust Level** | Security classification determining access permissions |
 
 ## Relationship to Existing Standards
 
 | Standard | Relationship |
 |----------|-------------|
-| **SKILL.md** (OpenClaw) | Skill Effectors use SKILL.md as their entry file. The Effector manifest extends (not replaces) the frontmatter. |
-| **MCP** (Model Context Protocol) | Bridge Effectors can expose capabilities as MCP tools. The manifest declares MCP bindings. |
-| **ACP/ACPX** (Agent Client Protocol) | Effectors can be invoked through ACP sessions. The manifest can declare ACP-compatible execution modes. |
-| **OCI** (Open Container Initiative) | Conceptual parallel — OCI standardized container images; Effectors standardize agent capabilities. |
-| **npm/package.json** | Direct inspiration for the manifest format and composition model. |
+| **SKILL.md** | Skill Effectors use SKILL.md as entry. Type system extends frontmatter — doesn't replace it. |
+| **MCP** | MCP is the transport protocol. Effector types are the semantic interface layer — orthogonal. |
+| **A2A** | Handles agent-to-agent communication. Effector types define what capabilities agents expose. |
+| **WIT (WASM)** | WIT types code modules. Effector types apply the same principle to AI capabilities, with AI-specific additions (nondeterminism, cost, context). |
+| **TypeScript** | Direct inspiration: types on an untyped ecosystem without replacement. |
+| **npm/package.json** | Inspiration for manifest format and dependency model. |
 
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 0.1.0 | 2026-03 | Initial draft |
+| 0.1.0 | 2026-03 | Initial draft — manifest-focused format specification |
+| 0.2.0 | 2026-03 | Major revision — type system paradigm, composition algebra, discovery protocol |

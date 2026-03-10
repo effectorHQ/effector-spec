@@ -1,23 +1,25 @@
-# 03 — Effector Lifecycle
+# 08 — Effector Lifecycle
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
 
 ## Lifecycle Stages
 
-Every Effector moves through a defined lifecycle:
+Every Effector moves through a defined lifecycle. The **Type** stage is new in v0.2.0 — it sits between Create and Validate, formalizing the interface declaration as a first-class authoring step:
 
 ```
-Create → Validate → Package → Publish → Discover → Install → Execute
-  │         │          │         │          │          │         │
-  ▼         ▼          ▼         ▼          ▼          ▼         ▼
-Author    Lint &     Bundle   Registry   Search &   Resolve   Runtime
-writes    schema    into      indexes    browse     deps &    loads &
-manifest  check    artifact  metadata   results    place     invokes
-+ entry                                            files
+Create → Type → Validate → Package → Publish → Discover → Install → Execute
+  │        │        │          │         │          │          │         │
+  ▼        ▼        ▼          ▼         ▼          ▼          ▼         ▼
+Author  Declare  Lint &     Bundle   Registry   Search &   Resolve   Runtime
+writes  input/   schema    into      indexes    by type    deps &    type-
+files   output   check    artifact  + types    queries    place     checks
+        context                                            files     + runs
 ```
+
+The Type stage is optional (untyped Effectors still work) but strongly recommended — it unlocks type-indexed discovery, composition type-checking, and permission consistency validation.
 
 ## Stage 1: Create
 
@@ -39,7 +41,45 @@ npx create-effector my-workflow --type workflow
 
 See [`create-effector`](https://github.com/effectorHQ/create-effector) for details.
 
-## Stage 2: Validate
+## Stage 2: Type
+
+After writing the entry files, the author declares the Effector's interface. This is the step that most distinguishes Effector v0.2.0 from legacy skill formats.
+
+### What to Declare
+
+```toml
+# In effector.toml
+[effector.interface]
+input   = "CodeDiff"                              # from effector-types
+output  = "ReviewReport"                          # from effector-types
+context = ["Repository", "GitHubCredentials"]     # required context
+
+[effector.interface.cost]
+nondeterminism = "moderate"   # LLM-based, outputs vary
+token-budget   = 8000
+latency-p50    = "4s"
+idempotent     = false        # two runs may produce different reports
+```
+
+### Type Lookup
+
+All type names come from the [`effector-types`](https://github.com/effectorHQ/effector-types) standard library. If the right type doesn't exist, you can define a local type:
+
+```toml
+[effector.types.MyCustomInput]
+fields = { "url" = "string", "depth" = "number", "selector" = "string?" }
+description = "Web scraping target specification"
+```
+
+### When You Can Skip This
+
+- Very simple utility skills (e.g., `String → String` utilities) — inference will usually get it right
+- Prototype/draft Effectors not yet published to a registry
+- Skills with extremely dynamic I/O that can't be statically typed
+
+Untyped Effectors remain valid; they simply won't appear in type-indexed discovery queries and will show "inferred type (unverified)" badges in registry UIs.
+
+## Stage 3: Validate
 
 Before packaging, the Effector is validated against the spec:
 
@@ -77,7 +117,7 @@ npx @effectorhq/skill-lint SKILL.md
 # GitHub Action: effectorHQ/skill-lint-action
 ```
 
-## Stage 3: Package
+## Stage 4: Package
 
 Packaging bundles the Effector into a distributable artifact.
 
@@ -113,7 +153,7 @@ Every package SHOULD include a SHA-256 checksum:
 github-pr-review-1.2.0.tar.gz.sha256
 ```
 
-## Stage 4: Publish
+## Stage 5: Publish
 
 Publishing uploads the package to a registry and indexes its metadata.
 
@@ -149,7 +189,7 @@ npm publish
 gh release create v1.2.0 ./dist/my-effector-1.2.0.tar.gz
 ```
 
-## Stage 5: Discover
+## Stage 6: Discover
 
 Users find Effectors through registry search, curated lists, or direct references.
 
@@ -170,10 +210,13 @@ Registries SHOULD support searching by:
 - Tags and categories
 - Effector type
 - Runtime compatibility
+- **Interface types** — `input`, `output`, `context` (v0.2.0+, enables type-indexed search)
 - Author
 - Popularity metrics (downloads, stars, forks)
 
-## Stage 6: Install
+Type-indexed discovery (see [Spec 03](./03-discovery.md)) allows queries like `effector-graph query --input CodeDiff --output SecurityReport` rather than keyword guessing.
+
+## Stage 7: Install
 
 Installation resolves dependencies and places files in the correct locations.
 
@@ -198,7 +241,7 @@ When installing an Effector with dependencies:
 4. Install dependencies before the dependent Effector
 5. Verify all `requires.bins` and `requires.env` are satisfied
 
-## Stage 7: Execute
+## Stage 8: Execute
 
 The runtime loads and invokes the Effector at the appropriate time.
 

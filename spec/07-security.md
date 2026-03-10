@@ -1,9 +1,27 @@
-# 06 — Security
+# 07 — Security
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
+
+## Security Is a Type System
+
+The naive approach to Effector security is an allowlist: declare `network = true`, and the runtime either grants or denies it as a binary decision. This is necessary but not sufficient.
+
+The Effector security model goes further: **permissions are types**. The `[effector.permissions]` block is as semantically rich as `[effector.interface]`. A runtime can perform static analysis on permission declarations before execution — looking for permission creep between versions, over-declared capabilities, or permissions that contradict the declared interface.
+
+Consider: an Effector that declares `input: CodeDiff, output: ReviewReport` has no legitimate reason to declare `filesystem = ["write"]`. That mismatch is a security type error, detectable before any code runs.
+
+```
+Permission Type Rules:
+  input: String, output: Markdown  →  expect: network=false, filesystem=[]
+  input: RepositoryRef              →  expect: env-read=[*TOKEN*]
+  context: [Docker]                 →  expect: subprocess=true OR network=true
+  output: Notification              →  expect: network=true
+```
+
+The [`effector-audit`](https://github.com/effectorHQ/effector-audit) tool enforces these rules.
 
 ## Security Model
 
@@ -71,7 +89,7 @@ Effectors are classified into trust levels based on their source and verificatio
 
 A community Effector can be escalated to "verified" if:
 
-1. It passes the security toolkit checks (`@effectorhq/security-audit`)
+1. It passes the security toolkit checks (`effector-audit`)
 2. A maintainer reviews and signs the package
 3. It maintains a clean security record over time
 
@@ -132,10 +150,10 @@ Skills (SKILL.md) are instruction-based — they don't execute code directly. Bu
 3. **Scope creep** — Does the skill instruct actions beyond its declared purpose?
 4. **Injection risk** — Could the skill's instructions be manipulated by untrusted input?
 
-The [`security-toolkit`](https://github.com/effectorHQ/security-toolkit) CLI performs these checks:
+The [`effector-audit`](https://github.com/effectorHQ/effector-audit) CLI performs these checks:
 
 ```bash
-npx @effectorhq/security-audit ./SKILL.md
+npx effector-audit ./SKILL.md
 ```
 
 ## Vulnerability Reporting
@@ -171,6 +189,6 @@ Before publishing an Effector:
 - [ ] No credentials are hardcoded (use environment variables)
 - [ ] No destructive commands without explicit user confirmation
 - [ ] Dependencies are pinned to specific versions (no `*` in production)
-- [ ] The Effector passes `@effectorhq/security-audit` with no critical findings
+- [ ] The Effector passes `effector-audit` with no critical findings
 - [ ] CHANGELOG documents any permission changes between versions
 - [ ] README clearly states what the Effector accesses and why

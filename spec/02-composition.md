@@ -1,13 +1,140 @@
-# 04 — Composition
+# 02 — Composition Algebra
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
+
+---
+
+## Composition Is Type-Checked
+
+Effectors are designed to compose. But composition without type checking is guesswork — an agent runtime wiring `docker-build → slack-notify` has no way to know whether the output of one is a valid input for the other, until it fails at 2am in production.
+
+The Effector Composition Algebra solves this: every composition operation has a **type rule** that the runtime verifies before execution. A type error at wire-up time is infinitely cheaper than a runtime failure.
+
+---
+
+## The Four Composition Operators
+
+### Sequential (`→`)
+
+One Effector feeds its output directly into the next Effector's input.
+
+```
+A → B   iff   output(A) <: input(B)
+```
+
+The `<:` relation is structural subtyping: `output(A)` must have at least all the fields required by `input(B)`, with compatible types.
+
+```yaml
+# pipeline.yml
+pipeline:
+  - effector: code-analyzer     # input: CodeDiff, output: ReviewReport
+  - effector: report-formatter  # input: ReviewReport, output: Markdown
+  - effector: slack-poster      # input: Markdown, output: Notification
+```
+
+Type check:
+```
+code-analyzer.output    = ReviewReport
+report-formatter.input  = ReviewReport   ✓ (exact match)
+report-formatter.output = Markdown
+slack-poster.input      = Markdown       ✓ (exact match)
+```
+
+If `code-analyzer` were replaced with a skill outputting `DeploymentStatus`, the pipeline would reject at type-check time: `DeploymentStatus </: ReviewReport`.
+
+### Parallel (`‖`)
+
+Multiple Effectors run concurrently from the same input, their outputs merged.
+
+```
+A ‖ B   iff   input(A) <: T  and  input(B) <: T  (same input source T)
+```
+
+```yaml
+pipeline:
+  - source: code-diff
+  - parallel:
+      - effector: security-scanner    # input: CodeDiff, output: SecurityReport
+      - effector: style-checker       # input: CodeDiff, output: StyleReport
+      - effector: test-runner         # input: CodeDiff, output: TestResult
+  - effector: report-aggregator       # input: [SecurityReport, StyleReport, TestResult]
+```
+
+The `report-aggregator`'s input type is validated against the merged output array of all parallel branches.
+
+### Conditional (`?`)
+
+One of several branches is selected at runtime based on a predicate. The type rule requires all branches to produce compatible outputs:
+
+```
+A ? B : C   iff   output(B) <: R  and  output(C) <: R  (some common supertype R)
+```
+
+```yaml
+pipeline:
+  - effector: lang-detector       # input: String, output: LangTag
+  - conditional:
+      predicate: "output.lang == 'python'"
+      then:
+        effector: python-linter   # output: LintReport
+      else:
+        effector: generic-linter  # output: LintReport
+  - effector: report-poster       # input: LintReport
+```
+
+Both branches output `LintReport` — the downstream Effector sees a consistent type regardless of which branch ran.
+
+### Fallback (`|`)
+
+If the primary Effector fails (error, timeout, permission denied), the fallback runs. Type rule: fallback must accept the same input and produce a compatible output.
+
+```
+A | B   iff   input(B) <: input(A)  and  output(B) <: output(A)
+```
+
+```yaml
+pipeline:
+  - effector: gpt4-reviewer       # input: CodeDiff, output: ReviewReport
+    fallback:
+      effector: basic-linter      # input: CodeDiff, output: ReviewReport (simplified)
+```
+
+This enables graceful degradation: a high-quality LLM-based reviewer falls back to a deterministic linter when the LLM is unavailable, without the downstream pipeline noticing.
+
+---
+
+## Type Checking Rules (Normative)
+
+A runtime implementing composition MUST reject a pipeline if any of the following conditions hold:
+
+```
+RULE 1: Sequential type mismatch
+  output(step[i]) </: input(step[i+1])
+  → ERROR: "Type mismatch at step N: output ${T1} is not assignable to input ${T2}"
+
+RULE 2: Parallel merge type conflict
+  ∃ branch b: output(b) </: declared_merge_input
+  → ERROR: "Parallel branch ${B} output ${T} is not assignable to merge target"
+
+RULE 3: Conditional branch divergence
+  ¬∃ supertype R s.t. output(then) <: R ∧ output(else) <: R
+  → ERROR: "Conditional branches produce incompatible types: ${T1} vs ${T2}"
+
+RULE 4: Fallback signature mismatch
+  input(fallback) </: input(primary)  OR  output(fallback) </: output(primary)
+  → ERROR: "Fallback must be substitutable for primary"
+
+RULE 5: Unknown type
+  A type reference not in effector-types standard library and not locally defined
+  → WARNING: "Unresolved type ${T} — treating as unknown (skipping type check for this step)"
+```
+
+Rule 5 produces a warning (not an error) to preserve backward compatibility with untyped legacy skills.
 
 ---
 
 ## Composition Model
-
-Effectors are designed to compose. A workflow chains skills. A workspace bundles skills, extensions, and prompts. This section defines how composition works.
 
 ## Dependencies
 

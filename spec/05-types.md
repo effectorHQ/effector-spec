@@ -1,7 +1,7 @@
-# 02 — Effector Types
+# 05 — Effector Types
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
 
@@ -43,7 +43,9 @@ The Effector type system defines six canonical types. Each maps to a distinct ca
 | Distribution | ClawHub (`clawhub publish`) |
 | Tiers | Bundled (shipped with OpenClaw), Managed (ClawHub), Workspace (local) |
 
-### Example Manifest
+### Interface Pattern
+
+Skills are the primary leaf-node type. Their interface is always: a concrete tool input → a concrete output. The most common pattern in the ClawHub corpus (45% of all skills) is some variant of `String → Markdown`.
 
 ```toml
 [effector]
@@ -51,6 +53,11 @@ name = "docker-compose"
 version = "2.1.0"
 type = "skill"
 description = "Manage multi-container Docker applications with docker-compose"
+
+[effector.interface]
+input   = "String"             # command / task description
+output  = "OperationStatus"    # execution result with stdout/stderr/exit-code
+context = ["Docker", "ShellEnvironment"]
 
 [runtime.openclaw]
 format = "skill.md"
@@ -92,6 +99,17 @@ Use the `skill` type when:
 | Providers | `api.registerProvider(...)` — LLM/service backends |
 | Actions | `api.registerAction(...)` — custom execution primitives |
 | Hooks | `api.on('message', ...)` — event lifecycle hooks |
+
+### Interface Pattern
+
+Extensions bridge the runtime's plugin API. Their interface typically transforms messages from a channel-specific format into the runtime's internal message type, and vice versa.
+
+```toml
+[effector.interface]
+input   = "ChannelEvent"       # platform-specific message wrapper
+output  = "RuntimeMessage"     # normalized internal message
+context = ["TelegramCredentials", "ChannelConfig"]
+```
 
 ### Example Manifest
 
@@ -149,6 +167,18 @@ Use the `extension` type when:
 | Variables | `${VARIABLE}` interpolation |
 | Resumability | Failed pipelines restart from the failed step |
 | Error handling | `on_failure` hooks, retry with backoff |
+
+### Interface Pattern
+
+Workflows have an emergent interface: their input is the input of the first step; their output is the output of the last step. The runtime infers this from the pipeline definition, or the author can declare it explicitly for discoverability.
+
+```toml
+[effector.interface]
+input   = "RepositoryRef"      # what triggers the workflow
+output  = "Notification"       # what it produces on completion
+context = ["GitHubCredentials", "Docker", "Kubernetes", "Slack"]
+nondeterminism = "low"         # deterministic pipeline, low variance
+```
 
 ### Example Manifest
 
@@ -212,6 +242,21 @@ Use the `workflow` type when:
 | Health | `HEARTBEAT.md` — monitoring, status endpoints |
 | Pattern | "Workspace-as-Kernel" — workspace files define the OS of the agent |
 
+### Interface Pattern
+
+Workspaces don't have a conventional input/output interface — they define an agent's *ambient capability context*. Their interface is declarative: what the agent can do when this workspace is loaded.
+
+```toml
+[effector.interface]
+# Workspaces declare capability surfaces, not I/O pairs
+capabilities = [
+  "RepositoryRef → OperationStatus",
+  "String → Markdown",
+  "IssueRef → Notification"
+]
+context = ["GitHubCredentials", "Docker", "Kubernetes", "Slack"]
+```
+
 ### Example Manifest
 
 ```toml
@@ -271,6 +316,17 @@ The `openclaw-mcp` bridge (already built by effectorHQ) is the canonical example
 | Transport | stdio (MCP standard) |
 | Entry | `bin/skill-mcp.js serve <directory>` |
 
+### Interface Pattern
+
+Bridges have a meta-interface: they transform the interface representation itself. The bridge's typed interface is the union of the interfaces it exposes on the target side.
+
+```toml
+[effector.interface]
+input   = "SkillBundle"         # source-runtime skill package
+output  = "MCPToolDefinition"   # target-runtime capability descriptor
+context = ["SkillDirectory"]
+```
+
 ### Example Manifest
 
 ```toml
@@ -314,6 +370,19 @@ Use the `bridge` type when:
 - **Distribution:** Registries, GitHub
 - **Granularity:** One prompt template or a related collection
 
+### Interface Pattern
+
+Prompts are template literals with a typed context: their variables map to specific types. A prompt's output type is always `String` (raw text), but the downstream interpretation determines the real output type.
+
+```toml
+[effector.interface]
+input   = "PromptContext"       # template variable bindings
+output  = "String"              # rendered prompt text
+context = []                    # prompts have no runtime context deps
+nondeterminism = "none"         # template rendering is fully deterministic
+idempotent = true
+```
+
 ### Example Manifest
 
 ```toml
@@ -355,6 +424,19 @@ Use the `prompt` type when:
 - You want to version-control and distribute prompt engineering work
 
 ---
+
+## Type → Interface Cheat Sheet
+
+A quick reference for the most common interface patterns by type:
+
+| Type | Typical Input | Typical Output | Context | Nondeterminism |
+|------|-------------|----------------|---------|----------------|
+| `skill` | `String` / `CodeDiff` / `RepositoryRef` | `Markdown` / `OperationStatus` / `ReviewReport` | Tool + Credential | low–moderate |
+| `extension` | `ChannelEvent` | `RuntimeMessage` | Platform credentials | none |
+| `workflow` | `RepositoryRef` / `String` | `Notification` / `Report` | Multi-tool | low |
+| `workspace` | N/A (capabilities) | N/A (capabilities) | Everything | N/A |
+| `bridge` | `SkillBundle` | `MCPToolDefinition` | Source directory | none |
+| `prompt` | `PromptContext` | `String` | (none) | none |
 
 ## Type Compatibility Matrix
 

@@ -1,7 +1,7 @@
-# 01 — The Effector Manifest
+# 04 — The Effector Manifest
 
 **Status:** Draft
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
 
