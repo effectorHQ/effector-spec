@@ -17,6 +17,11 @@ min-spec-version = "0.1.0"
 primary = "developer-tools"
 secondary = ["infrastructure"]
 
+[effector.interface]
+input   = "String"
+output  = "JSON"
+context = []
+
 [effector.bridge]
 source-runtime = "openclaw"
 source-format = "skill.md"

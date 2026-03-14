@@ -175,6 +175,44 @@
             }
           }
         },
+        "interface": {
+          "type": "object",
+          "description": "Typed interface declaration — the core of the Effector type system",
+          "properties": {
+            "input": {
+              "type": "string",
+              "description": "Input type name from effector-types standard library"
+            },
+            "output": {
+              "type": "string",
+              "description": "Output type name from effector-types standard library"
+            },
+            "context": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Context type names required for execution"
+            },
+            "nondeterminism": {
+              "type": "string",
+              "enum": ["none", "low", "moderate", "high"],
+              "description": "Degree of output variability across invocations"
+            },
+            "idempotent": {
+              "type": "boolean",
+              "description": "Whether repeated invocations produce same side effects"
+            },
+            "token-budget": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Maximum token consumption per invocation"
+            },
+            "latency-p50": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Expected median latency in milliseconds"
+            }
+          }
+        },
         "security": {
           "type": "object",
           "properties": {

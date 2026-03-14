@@ -17,6 +17,9 @@ min-spec-version = "0.1.0"
 primary = "infrastructure"
 secondary = ["developer-tools"]
 
+# Note: Workspaces don't have conventional I/O interfaces.
+# They declare capabilities rather than accept/produce typed data.
+
 [[effector.dependencies]]
 name = "docker-compose"
 version = ">=2.0.0"

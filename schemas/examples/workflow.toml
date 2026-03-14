@@ -17,6 +17,11 @@ min-spec-version = "0.1.0"
 primary = "infrastructure"
 secondary = ["ci-cd"]
 
+[effector.interface]
+input   = "RepositoryRef"
+output  = "Notification"
+context = ["Docker", "Kubernetes", "SlackCredentials"]
+
 [[effector.dependencies]]
 name = "docker-build"
 version = ">=1.0.0"

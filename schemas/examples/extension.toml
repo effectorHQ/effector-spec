@@ -16,6 +16,11 @@ min-spec-version = "0.1.0"
 [effector.categories]
 primary = "communication"
 
+[effector.interface]
+input   = "String"
+output  = "Notification"
+context = ["GenericAPIKey"]
+
 [effector.permissions]
 network = true
 env-read = ["TELEGRAM_BOT_TOKEN"]

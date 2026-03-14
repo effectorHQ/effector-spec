@@ -17,6 +17,11 @@ min-spec-version = "0.1.0"
 primary = "developer-tools"
 secondary = ["ci-cd", "code-quality"]
 
+[effector.interface]
+input   = "CodeDiff"
+output  = "ReviewReport"
+context = ["GitHubCredentials", "Repository"]
+
 [[effector.dependencies]]
 name = "git-operations"
 version = ">=1.0.0"

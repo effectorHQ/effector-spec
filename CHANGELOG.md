@@ -2,6 +2,15 @@
 
 All notable changes to the Effector Specification will be documented in this file.
 
+## [0.2.1] — 2026-03-15
+
+### Added
+
+- **`[effector.interface]` in JSON Schema** — Added input, output, context, nondeterminism, idempotent, token-budget, latency-p50 properties to `effector.schema.json`
+- **`[effector.interface]` in all 6 example manifests** — skill, extension, workflow, workspace, bridge, prompt examples now include interface declarations
+- **validate-manifest.js** — Zero-dependency CLI manifest validator with optional `--types` flag for type name validation against `effector-types/types.json`
+- **validate-examples.js** — Batch validator for all example manifests
+
 ## [0.2.0] — 2026-03-10
 
 ### Added
