@@ -153,7 +153,7 @@ Skills (SKILL.md) are instruction-based — they don't execute code directly. Bu
 The [`effector-audit`](https://github.com/effectorHQ/effector-audit) CLI performs these checks:
 
 ```bash
-npx effector-audit ./SKILL.md
+npx @effectorhq/audit scan ./SKILL.md
 ```
 
 ## Vulnerability Reporting
