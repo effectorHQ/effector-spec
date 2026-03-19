@@ -215,4 +215,4 @@ This is a living specification. Changes go through the [RFC process](https://git
 
 ---
 
-<sub>Part of the <a href="https://github.com/effectorHQ">effectorHQ</a> studio. We build hands for AI.</sub>
+<sub>Part of the <a href="https://github.com/effectorHQ">effectorHQ</a> studio. We build hands for AI that moves first.</sub>
