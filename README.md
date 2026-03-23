@@ -2,7 +2,7 @@
 
 [![Status: Draft](https://img.shields.io/badge/status-draft-orange.svg)](spec/00-overview.md)
 [![Version: 0.2.0](https://img.shields.io/badge/version-0.2.0-blue.svg)](CHANGELOG.md)
-[![License: CC-BY-4.0](https://img.shields.io/badge/license-CC--BY--4.0-green.svg)](LICENSE)
+[![License: CC-BY-4.0](https://img.shields.io/badge/license-CC--BY--4.0-green.svg)](LICENSE.md)
 [![RFC: 0001](https://img.shields.io/badge/RFC-0001-E03E3E.svg)](https://github.com/effectorHQ/rfcs/blob/main/text/0001-effector-spec.md)
 
 **The first type system for AI agent capabilities.**
@@ -211,10 +211,9 @@ This is a living specification. Changes go through the [RFC process](https://git
 
 ## License
 
+This project is currently licensed under the [Apache License, Version 2.0](LICENSE.md) 。
 
-This project is currently licensed under the Apache 2.0 License 。
-
-[CC-BY-4.0](./LICENSE)
+[CC-BY-4.0](./LICENSE.md)
 
 ---
 

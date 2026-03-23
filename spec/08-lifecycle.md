@@ -27,7 +27,7 @@ The author creates the Effector package:
 
 1. **Write the entry file(s)** — `SKILL.md`, TypeScript source, `pipeline.yml`, etc.
 2. **Write the manifest** — `effector.toml` (or rely on inference for simple skills)
-3. **Add supporting files** — README, LICENSE, examples, tests, schemas
+3. **Add supporting files** — README, LICENSE.md, examples, tests, schemas
 
 ### Scaffolding
 
@@ -130,7 +130,7 @@ my-effector-1.2.0.tar.gz
 ├── effector.toml          # Manifest (required)
 ├── SKILL.md               # Entry file (type-dependent)
 ├── README.md              # Documentation
-├── LICENSE                # License file
+├── LICENSE.md             # License file
 ├── CHANGELOG.md           # Version history
 └── schemas/               # Optional: JSON Schemas, examples
 ```
