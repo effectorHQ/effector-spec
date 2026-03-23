@@ -62,7 +62,7 @@ name = "@effectorhq/skill-lint"
 ```toml
 [effector]
 # ... required fields ...
-license = "MIT"                          # SPDX license identifier
+license = "Apache-2.0"                          # SPDX license identifier
 emoji = "🔍"                             # Single emoji for UI display
 tags = ["github", "code-review", "ci"]   # Discovery tags (max 10)
 authors = ["Alice <alice@example.com>"]  # Author list
@@ -204,7 +204,7 @@ name = "github-pr-review"
 version = "1.2.0"
 type = "skill"
 description = "Automated pull request review with code analysis and inline suggestions"
-license = "MIT"
+license = "Apache-2.0"
 emoji = "🔍"
 tags = ["github", "code-review", "ci", "quality"]
 authors = ["effectorHQ Contributors"]
